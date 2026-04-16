@@ -32,9 +32,7 @@ jobs:
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          # Clean old broken builds first
           buildozer android clean
-          # Force a fresh build
           buildozer android debug
 
       - name: Upload APK
