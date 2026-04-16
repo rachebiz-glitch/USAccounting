@@ -27,15 +27,15 @@ jobs:
           libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
           autoconf automake libtool pkg-config cmake gettext
           pip install --user --upgrade pip
-          pip install --user --upgrade "buildozer>=1.5.0" "cython<3.0" setuptools
+          # We use version 1.5.0 specifically to avoid the error in your logs
+          pip install --user "buildozer==1.5.0" "cython<3.0" setuptools
 
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          # Force delete old corrupted build folders
+          # Clean out the hidden folders that are carrying the error
           rm -rf .buildozer/
           buildozer android clean
-          # Start fresh build
           buildozer android debug
 
       - name: Upload APK
