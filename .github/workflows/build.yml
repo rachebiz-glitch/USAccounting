@@ -1,32 +1,42 @@
-name: Build Android APK
+name: Build Android APK (Fixed)
 on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Fixes the Node.js 20 deprecation warning by forcing Node 24
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-
-      - name: Install Dependencies
+      - name: Install Android Build Dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git openjdk-17-jdk
+          sudo apt install -y build-essential git openjdk-17-jdk python3-pip
+          pip3 install --user --upgrade Cython==0.29.33 virtualenv
 
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
           command: buildozer android debug
+          buildozer_version: stable
 
-      - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Troubleshoot - List Files (Only runs if build fails)
+        if: failure()
+        run: |
+          echo "Build failed. Checking if bin directory exists..."
+          ls -R bin/ || echo "bin/ folder is empty or does not exist."
+          echo "Checking root directory..."
+          ls -F
+
+      - name: Upload APK Artifact
+        if: always() # Ensures logs are uploaded even if build fails
+        uses: actions/upload-artifact@v4.6.0
         with:
-          name: package
+          name: python-apk
           path: bin/*.apk
+          if-no-files-found: warn 
