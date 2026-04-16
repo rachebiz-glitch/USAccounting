@@ -13,7 +13,6 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          df -h
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,12 +32,13 @@ jobs:
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          # This command ensures it builds even if it hits a minor download snag
-          buildozer android debug || buildozer android debug
+          # Clean old broken builds first
+          buildozer android clean
+          # Force a fresh build
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: USAccounting-Package
-          # This asterisk (*) is the fix. It finds any file ending in .apk
           path: bin/*.apk
