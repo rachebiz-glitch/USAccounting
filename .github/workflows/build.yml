@@ -7,7 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The "Red Destroyer" - clears space so the build doesn't crash
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -34,10 +33,12 @@ jobs:
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          yes | buildozer android debug
+          # This command ensures it builds even if it hits a minor download snag
+          buildozer android debug || buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: USAccounting-Package
+          # This asterisk (*) is the fix. It finds any file ending in .apk
           path: bin/*.apk
