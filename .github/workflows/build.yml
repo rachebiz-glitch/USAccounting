@@ -32,7 +32,10 @@ jobs:
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
+          # Force delete old corrupted build folders
+          rm -rf .buildozer/
           buildozer android clean
+          # Start fresh build
           buildozer android debug
 
       - name: Upload APK
