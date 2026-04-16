@@ -7,36 +7,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev \
-          libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
-          libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
-          autoconf automake libtool pkg-config cmake gettext
-          pip install --user --upgrade pip
-          # We use version 1.5.0 specifically to avoid the error in your logs
-          pip install --user "buildozer==1.5.0" "cython<3.0" setuptools
+          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev autoconf automake libtool pkg-config cmake gettext
+          pip install --upgrade pip
+          # Force specific working versions
+          pip install buildozer==1.5.0 cython==0.29.33 sh
+
+      - name: Pre-Install Python-for-Android
+        run: |
+          # This manually creates the folder that your error message says is missing
+          pip install python-for-android
+          mkdir -p .buildozer/android/platform/
+          ln -s $(python -c "import site; print(site.getusersitepackages())")/pythonforandroid .buildozer/android/platform/python-for-android
 
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          # Clean out the hidden folders that are carrying the error
-          rm -rf .buildozer/
-          buildozer android clean
+          # We skip 'clean' this time to avoid deleting our manual fix
           buildozer android debug
+        env:
+          # Tells the system exactly where to find the tools
+          P4A_RECURSIVE_ANT: 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
