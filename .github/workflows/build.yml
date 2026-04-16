@@ -10,31 +10,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev autoconf automake libtool pkg-config cmake gettext
+          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev \
+          libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
+          libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
+          autoconf automake libtool pkg-config cmake gettext
           pip install --upgrade pip
-          # Force specific working versions
-          pip install buildozer==1.5.0 cython==0.29.33 sh
-
-      - name: Pre-Install Python-for-Android
-        run: |
-          # This manually creates the folder that your error message says is missing
-          pip install python-for-android
-          mkdir -p .buildozer/android/platform/
-          ln -s $(python -c "import site; print(site.getusersitepackages())")/pythonforandroid .buildozer/android/platform/python-for-android
+          pip install buildozer cython==0.29.33 sh python-for-android
 
       - name: Build with Buildozer
         run: |
+          # The Forced Fix: Eto yung gagawa ng folder na hinahanap ng error mo
+          mkdir -p .buildozer/android/platform
+          ln -s /home/runner/.local/bin/p4a .buildozer/android/platform/python-for-android
+          
           export PATH=$PATH:~/.local/bin
-          # We skip 'clean' this time to avoid deleting our manual fix
           buildozer android debug
-        env:
-          # Tells the system exactly where to find the tools
-          P4A_RECURSIVE_ANT: 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
