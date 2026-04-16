@@ -11,7 +11,7 @@ android.archs = arm64-v8a
 android.api = 31
 android.minapi = 21
 android.ndk = 25b
-# Removing the explicit 'android.sdk' line to let Buildozer auto-select the best one
+android.sdk = 31
 android.accept_sdk_license = True
 
 [buildozer]
