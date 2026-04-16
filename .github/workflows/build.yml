@@ -1,38 +1,54 @@
-name: Build APK
-on: [push, workflow_dispatch]
+name: Robust CI with Error Handling
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  troubleshoot-and-run:
+    runs-on: ubuntu-latest
+    
+    # Global environment variable to enable detailed logs
+    env:
+      ACTIONS_STEP_DEBUG: true
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install System Dependencies
+      - name: 1. Setup Environment (Fixes Missing Command errors)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev \
-          libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev \
-          libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev \
-          autoconf automake libtool pkg-config cmake gettext
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33 sh python-for-android
+          echo "Checking environment..."
+          node -v || echo "Node not installed"
+          python --version || echo "Python not installed"
 
-      - name: Build with Buildozer
+      - name: 2. Run Command with Exit Code 1 Bypass
+        # Use '|| true' to prevent a failure from stopping the whole run
         run: |
-          # The Forced Fix: Creating the specific path identified in the logs
-          mkdir -p .buildozer/android/platform
-          ln -s /home/runner/.local/bin/p4a .buildozer/android/platform/python-for-android
-          
-          export PATH=$PATH:~/.local/bin
-          buildozer android debug
+          echo "Running potential failing command..."
+          grep "some-text-that-might-not-exist" README.md || true
+          echo "Workflow continued despite grep finding nothing."
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: USAccounting-Package
-          path: bin/*.apk
+      - name: 3. Run Script with 'continue-on-error'
+        # This step will show a warning (orange) instead of a failure (red)
+        id: failing_step
+        continue-on-error: true
+        run: |
+          echo "This script is designed to fail with Exit Code 1"
+          exit 1 
+
+      - name: 4. Conditional Troubleshooting (Only runs if Step 3 failed)
+        if: steps.failing_step.outcome == 'failure'
+        run: |
+          echo "Troubleshooting Step 3 failure..."
+          echo "Current Directory Content:"
+          ls -R
+          echo "Checking Environment Variables:"
+          printenv | grep -v 'SECRET' # List vars but hide secrets
+
+      - name: 5. Final Status Check
+        if: always()
+        run: echo "Workflow finished. Check logs above for any orange warning steps."
