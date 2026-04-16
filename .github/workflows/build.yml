@@ -1,54 +1,32 @@
-name: Robust CI with Error Handling
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # Allows manual trigger
+name: Build Android APK
+on: [push, workflow_dispatch]
 
 jobs:
-  troubleshoot-and-run:
+  build:
     runs-on: ubuntu-latest
-    
-    # Global environment variable to enable detailed logs
-    env:
-      ACTIONS_STEP_DEBUG: true
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 1. Setup Environment (Fixes Missing Command errors)
-        run: |
-          echo "Checking environment..."
-          node -v || echo "Node not installed"
-          python --version || echo "Python not installed"
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      - name: 2. Run Command with Exit Code 1 Bypass
-        # Use '|| true' to prevent a failure from stopping the whole run
+      - name: Install Dependencies
         run: |
-          echo "Running potential failing command..."
-          grep "some-text-that-might-not-exist" README.md || true
-          echo "Workflow continued despite grep finding nothing."
+          sudo apt update
+          sudo apt install -y build-essential git openjdk-17-jdk
 
-      - name: 3. Run Script with 'continue-on-error'
-        # This step will show a warning (orange) instead of a failure (red)
-        id: failing_step
-        continue-on-error: true
-        run: |
-          echo "This script is designed to fail with Exit Code 1"
-          exit 1 
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        with:
+          command: buildozer android debug
 
-      - name: 4. Conditional Troubleshooting (Only runs if Step 3 failed)
-        if: steps.failing_step.outcome == 'failure'
-        run: |
-          echo "Troubleshooting Step 3 failure..."
-          echo "Current Directory Content:"
-          ls -R
-          echo "Checking Environment Variables:"
-          printenv | grep -v 'SECRET' # List vars but hide secrets
-
-      - name: 5. Final Status Check
+      - name: Upload APK
         if: always()
-        run: echo "Workflow finished. Check logs above for any orange warning steps."
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: bin/*.apk
