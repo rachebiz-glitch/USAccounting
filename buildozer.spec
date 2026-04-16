@@ -6,7 +6,8 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 version = 1.0
 
-requirements = python3, kivy==2.3.0, hostpython3
+# Simplified to the absolute essentials to stop the NoneType error
+requirements = python3,kivy==2.3.0,hostpython3
 
 orientation = portrait
 android.archs = arm64-v8a
