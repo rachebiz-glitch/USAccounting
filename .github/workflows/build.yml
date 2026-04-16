@@ -24,7 +24,7 @@ jobs:
 
       - name: Build with Buildozer
         run: |
-          # The Forced Fix: Eto yung gagawa ng folder na hinahanap ng error mo
+          # The Forced Fix: Creating the specific path identified in the logs
           mkdir -p .buildozer/android/platform
           ln -s /home/runner/.local/bin/p4a .buildozer/android/platform/python-for-android
           
